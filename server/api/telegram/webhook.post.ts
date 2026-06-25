@@ -137,34 +137,15 @@ export default defineEventHandler(async (event) => {
     }
 
     const digitos = text.replace(/\D/g, '')
-    
-    // Buscar en busqueda_familiares
-    const { data: dataBusqueda } = await supabase
-      .from('busqueda_familiares')
-      .select('*, bitacora_casos(*)')
-      .or(`cedula_buscado.ilike.%${digitos}%`)
-      .limit(5)
 
     // Buscar en reportes_emergencias
     const { data: dataReportes } = await supabase
       .from('reportes_emergencias')
       .select('*, bitacora_incidentes(*, refugios(nombre_refugio, latitud, longitud), centros_medicos(nombre, latitud, longitud))')
-      .ilike('detalles_emergencia', `%${digitos}%`)
+      .or(`detalles_emergencia.ilike.%${digitos}%,nombre_completo.ilike.%${digitos}%`)
       .limit(5)
 
     const resultados = []
-
-    if (dataBusqueda && dataBusqueda.length > 0) {
-      dataBusqueda.forEach(b => {
-        resultados.push({
-          tipo: 'busqueda',
-          nombre: b.nombre_buscado,
-          estatus: b.estatus,
-          direccion: b.ubicacion_actual || b.detalles_adicionales,
-          bitacora: b.bitacora_casos ? b.bitacora_casos.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) : []
-        })
-      })
-    }
 
     if (dataReportes && dataReportes.length > 0) {
       dataReportes.forEach(r => {
