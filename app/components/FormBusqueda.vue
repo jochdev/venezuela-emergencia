@@ -177,6 +177,27 @@ const consultarEstatus = async () => {
       <span>Última actualización de datos: <strong>{{ ultimaActualizacionTexto }}</strong></span>
     </div>
 
+    <div class="mt-4 p-4 bg-zinc-900 rounded-lg shadow-sm border border-zinc-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div>
+        <h4 class="font-bold text-white text-sm flex items-center gap-2">
+          <UIcon name="i-lucide-bot" class="w-4 h-4 text-primary" />
+          ¿Tienes datos limitados?
+        </h4>
+        <p class="text-xs text-zinc-400 mt-1">
+          Usa nuestro Bot de Telegram para consultas más rápidas y suscríbete a alertas automáticas.
+        </p>
+      </div>
+      <UButton 
+        to="/bot" 
+        color="primary" 
+        variant="solid" 
+        size="sm"
+        class="shrink-0"
+      >
+        Ver Guía de Uso
+      </UButton>
+    </div>
+
     <!-- Resultados (Oculto por defecto hasta consultar) -->
     <div v-if="consultado" class="space-y-4 pt-2">
       <div v-if="resultados.length > 0" class="space-y-3">

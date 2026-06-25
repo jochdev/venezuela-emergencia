@@ -8,6 +8,25 @@ import CentrosAcopio from '~/components/CentrosAcopio.vue'
 import VoluntariadoMedico from '~/components/VoluntariadoMedico.vue'
 
 const { isMobile } = useDevice()
+const toast = useToast()
+
+const copiarEnlace = async (url: string) => {
+  try {
+    await navigator.clipboard.writeText(url)
+    toast.add({
+      title: '¡Enlace copiado!',
+      description: 'Ya puedes pegarlo donde quieras.',
+      color: 'success',
+      icon: 'i-lucide-check-circle'
+    })
+  } catch (err) {
+    toast.add({
+      title: 'Error',
+      description: 'No se pudo copiar al portapapeles.',
+      color: 'error'
+    })
+  }
+}
 
 const { ubicaciones } = await useUbicaciones()
 provide('ubicaciones', ubicaciones)
@@ -24,7 +43,14 @@ const links = ref<ButtonProps[]>([
     color: 'primary',
     variant: 'subtle',
     icon: 'i-lucide-share-2',
-    click: compartirPlataforma
+    onClick: compartirPlataforma
+  },
+  {
+    label: 'Consultar vía Bot Telegram',
+    color: 'neutral',
+    variant: 'outline',
+    icon: 'i-lucide-bot',
+    to: '/bot'
   }
 ])
 
@@ -155,20 +181,26 @@ const estadisticasEstados = computed(() => {
 
     <!-- UModal: Compartir Plataforma -->
     <UModal v-model:open="modalCompartirAbierto" title="Compartir Plataforma"
-      description="Ayuda a difundir esta herramienta ligera para que más personas puedan reportar emergencias y buscar familiares.">
+      description="Ayuda a difundir estas herramientas. Selecciona el enlace adecuado.">
       <template #body>
-        <div class="space-y-4">
-          <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-100 flex items-center justify-between gap-2">
-            <span class="text-xs text-neutral-600 truncate">https://emergencia.joch.dev</span>
-            <UButton label="Copiar Enlace" size="xs" color="neutral" variant="subtle" icon="i-lucide-copy" @click="() => {
-              navigator.clipboard.writeText('https://emergencia.joch.dev');
-            }" />
+        <div class="space-y-6">
+          <!-- Personas -->
+          <div class="space-y-2">
+            <h4 class="font-bold text-sm text-neutral-800">Para Ciudadanos (Público General)</h4>
+            <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-100 flex items-center justify-between gap-2">
+              <span class="text-xs text-neutral-600 truncate">https://emergencia.joch.dev</span>
+              <UButton label="Copiar" size="xs" color="neutral" variant="subtle" icon="i-lucide-copy" @click="copiarEnlace('https://emergencia.joch.dev')" />
+            </div>
+            <UButton label="Compartir en WhatsApp" color="success" variant="solid" icon="i-simple-icons-whatsapp" class="w-full justify-center" size="sm" to="https://api.whatsapp.com/send?text=Si%20necesitas%20reportar%20afectados%20o%20buscar%20familiares%20usa%20esta%20plataforma%3A%20https%3A%2F%2Femergencia.joch.dev" target="_blank" />
           </div>
-          <div class="flex flex-col sm:flex-row gap-2">
-            <UButton label="Compartir en WhatsApp" color="success" variant="solid" icon="i-simple-icons-whatsapp"
-              class="w-full justify-center"
-              to="https://api.whatsapp.com/send?text=Si%20necesitas%20reportar%20afectados%20o%20buscar%20familiares%20por%20la%20emergencia%2C%20usa%20esta%20plataforma%20ligera%3A%20https%3A%2F%2Femergencia.joch.dev"
-              target="_blank" />
+
+          <!-- Autoridades -->
+          <div class="space-y-2">
+            <h4 class="font-bold text-sm text-neutral-800">Para Autoridades / Rescatistas</h4>
+            <div class="p-3 bg-neutral-50 rounded-lg border border-neutral-100 flex items-center justify-between gap-2">
+              <span class="text-xs text-neutral-600 truncate">https://control-emergencia.joch.dev</span>
+              <UButton label="Copiar" size="xs" color="neutral" variant="subtle" icon="i-lucide-copy" @click="copiarEnlace('https://control-emergencia.joch.dev')" />
+            </div>
           </div>
         </div>
       </template>
