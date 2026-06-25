@@ -128,3 +128,106 @@ CREATE TABLE IF NOT EXISTS busqueda_familiares (
 ALTER TABLE busqueda_familiares ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Permitir inserción pública en busqueda_familiares" ON busqueda_familiares FOR INSERT WITH CHECK (true);
 CREATE POLICY "Permitir lectura pública en busqueda_familiares" ON busqueda_familiares FOR SELECT USING (true);
+
+
+-- =========================================================================
+-- 6. Tablas Adicionales del Sistema de Gestión y Roles (Dashboard)
+-- =========================================================================
+
+-- Crear Tabla de Organismos de Seguridad
+CREATE TABLE IF NOT EXISTS organismos (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    siglas TEXT NOT NULL,
+    tipo TEXT NOT NULL CHECK (tipo IN ('Nacional', 'Estadal', 'Municipal')),
+    activo BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+ALTER TABLE organismos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Permitir lectura de organismos" 
+ON organismos FOR SELECT 
+USING (true);
+
+CREATE POLICY "Permitir gestión de organismos a admins" 
+ON organismos FOR ALL 
+TO authenticated
+USING (
+    COALESCE((SELECT rol FROM perfiles WHERE id = auth.uid()), 'operador') = 'admin'
+);
+
+
+-- Crear Tabla de Perfiles (Enlazada a auth.users de Supabase)
+CREATE TABLE IF NOT EXISTS perfiles (
+    id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    rol TEXT NOT NULL CHECK (rol IN ('admin', 'operador')),
+    nombre TEXT NOT NULL,
+    apellido TEXT NOT NULL,
+    dni TEXT UNIQUE NOT NULL,
+    organismo_id UUID REFERENCES organismos(id),
+    cobertura_estado_id INTEGER NOT NULL,
+    cobertura_municipio_id INTEGER,
+    cobertura_parroquia_id INTEGER,
+    activo BOOLEAN DEFAULT TRUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+ALTER TABLE perfiles ENABLE ROW LEVEL SECURITY;
+
+-- Permitir a cualquier usuario autenticado registrar su propio perfil tras verificar OTP
+CREATE POLICY "Permitir inserción de perfil propio" 
+ON perfiles FOR INSERT 
+WITH CHECK (auth.uid() = id);
+
+-- Permitir lectura de perfiles para autenticados (para conteo de inicio y verificación)
+CREATE POLICY "Permitir lectura de perfiles a autenticados" 
+ON perfiles FOR SELECT 
+TO authenticated
+USING (true);
+
+-- Permitir a un usuario actualizar su propio perfil, o al administrador actualizar cualquier perfil
+CREATE POLICY "Permitir actualización de perfil propio o por admin" 
+ON perfiles FOR UPDATE 
+TO authenticated
+USING (
+    auth.uid() = id 
+    OR 
+    COALESCE((SELECT rol FROM perfiles WHERE id = auth.uid()), 'operador') = 'admin'
+);
+
+
+-- Crear Tabla de Logs de Auditoría
+CREATE TABLE IF NOT EXISTS logs_auditoria (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    perfil_id UUID REFERENCES perfiles(id) ON DELETE SET NULL,
+    operador_nombre TEXT NOT NULL,
+    organismo_siglas TEXT,
+    accion TEXT NOT NULL,
+    tabla_afectada TEXT,
+    registro_id UUID,
+    detalles JSONB,
+    cobertura_contexto TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_logs_created_at ON logs_auditoria(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_logs_accion ON logs_auditoria(accion);
+
+ALTER TABLE logs_auditoria ENABLE ROW LEVEL SECURITY;
+
+-- Permitir inserción de logs de auditoría a usuarios autenticados
+CREATE POLICY "Permitir inserción de logs a autenticados" 
+ON logs_auditoria FOR INSERT 
+TO authenticated
+WITH CHECK (auth.uid() = perfil_id);
+
+-- Permitir lectura de logs solo a administradores
+CREATE POLICY "Permitir lectura de logs a admins" 
+ON logs_auditoria FOR SELECT 
+TO authenticated
+USING (
+    COALESCE((SELECT rol FROM perfiles WHERE id = auth.uid()), 'operador') = 'admin'
+);
+
