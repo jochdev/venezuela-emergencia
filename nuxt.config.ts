@@ -12,11 +12,20 @@ export default defineNuxtConfig({
     url: 'https://emergencia.joch.dev',
     name: 'Red de Apoyo y Emergencia Ciudadana',
     description: 'Plataforma ciudadana independiente para el reporte de afectados, búsqueda de familiares y gestión de ayuda en tiempo real en Venezuela.',
-    defaultLocale: 'es'
+    defaultLocale: 'es',
+    trailingSlash: false
   },
 
   schemaOrg: {
     enabled: false
+  },
+
+  ogImage: {
+    enabled: true
+  },
+
+  sitemap: {
+    strictNuxtContentAds: true
   },
 
   devtools: {

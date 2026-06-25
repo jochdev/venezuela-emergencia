@@ -19,7 +19,7 @@ useSeoMeta({
   description,
   ogTitle: title,
   ogDescription: description,
-  ogImage: 'https://ui.nuxt.com/assets/templates/nuxt/starter-light.png',
+  ogImage: '/og-emergencia.png',
   twitterCard: 'summary_large_image'
 })
 </script>

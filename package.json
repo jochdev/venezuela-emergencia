@@ -15,7 +15,7 @@
     "@iconify-json/simple-icons": "^1.2.86",
     "@nuxt/ui": "^4.9.0",
     "@nuxtjs/device": "^4.0.0",
-    "@nuxtjs/seo": "^5.3.0",
+    "@nuxtjs/seo": "^5.1.2",
     "@nuxtjs/supabase": "^2.0.9",
     "@takumi-rs/core": "^2.0.0-beta.9",
     "nuxt": "^4.4.8",
