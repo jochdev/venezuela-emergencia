@@ -15,6 +15,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const body = await readBody(event)
+  console.log('[Telegram Webhook] Mensaje recibido:', body?.message?.text || body?.callback_query?.data || 'Otro tipo de evento')
 
   // Extraer el chatId para el Rate Limit
   let chatId = null
@@ -120,6 +121,13 @@ export default defineEventHandler(async (event) => {
 
     const chatId = body.message.chat.id
     let text = body.message.text.trim().toUpperCase()
+
+    // Manejar comandos básicos
+    if (text === '/START' || text === '/AYUDA') {
+      const mensajeBienvenida = `🇻🇪 <b>Red de Apoyo y Emergencia</b>\n\nEste bot te permite consultar el estatus de personas reportadas en la contingencia.\n\n👉 <b>¿Cómo funciona?</b>\nSimplemente envíame un número de cédula (Ejemplo: <code>V-12345678</code> o <code>12345678</code>) y te devolveré su última ubicación conocida y su línea de tiempo.\n\n🔔 <b>Suscripciones:</b>\nAl consultar una cédula, tendrás la opción de suscribirte. Si lo haces, te enviaremos un mensaje automático tan pronto como un operador actualice la información de esa persona.`
+      await sendMessage(chatId, mensajeBienvenida)
+      return { ok: true }
+    }
 
     const cedulaRegex = /^[VEJ]?\-?\d{5,9}$/
     
