@@ -64,6 +64,9 @@ useSeoMeta({
           class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs text-neutral-500 pt-4 border-t border-neutral-100">
           <!-- Enlaces de políticas y código -->
           <div class="flex flex-wrap gap-2 items-center">
+            <UButton label="Acerca del Proyecto y Autoridades" to="/acerca-de" variant="link" color="neutral"
+              size="xs" class="p-0 text-neutral-500 hover:text-neutral-900 cursor-pointer" />
+            <span>|</span>
             <UButton label="Política de Privacidad y Manejo de Datos" to="/privacidad" variant="link" color="neutral"
               size="xs" class="p-0 text-neutral-500 hover:text-neutral-900 cursor-pointer" />
             <span>|</span>
