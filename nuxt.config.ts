@@ -49,6 +49,7 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
     public: {
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
       supabaseKey: process.env.NUXT_PUBLIC_SUPABASE_KEY
