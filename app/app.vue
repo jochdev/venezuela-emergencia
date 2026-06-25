@@ -26,46 +26,64 @@ useSeoMeta({
 
 <template>
   <UApp>
-    <UHeader>
-      <template #left>
-        <NuxtLink to="/" class="flex items-center gap-2 font-bold text-highlighted text-lg">
-          <span>🇻🇪</span>
-          <span>SOS Venezuela</span>
-          <span class="text-xs px-1.5 py-0.5 rounded bg-error text-white font-normal uppercase tracking-wider">Emergencia</span>
-        </NuxtLink>
-      </template>
+    <header class="bg-white py-6 px-4 sm:px-6">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <!-- Logo y Subtítulo -->
+        <div>
+          <NuxtLink to="/" class="text-xl tracking-tight">
+            <span class="font-bold text-[#e15a2b]">Emergencia</span><span
+              class="font-semibold text-neutral-800">.joch.dev</span>
+          </NuxtLink>
+          <p class="text-xs text-neutral-500 mt-1">
+            Iniciativa Ciudadana de Apoyo - Sismo 2026
+          </p>
+        </div>
 
-      <template #right>
-        <UColorModeButton />
-      </template>
-    </UHeader>
+        <!-- Powered by Jochdev -->
+        <div class="text-xs text-neutral-500 self-start sm:self-center font-mono">
+          Powered by Jochdev
+        </div>
+      </div>
+    </header>
 
-    <UMain>
+    <UMain class="bg-white min-h-[calc(100vh-140px)]">
       <NuxtPage />
     </UMain>
 
-    <USeparator />
 
-    <UFooter>
-      <template #left>
-        <p class="text-xs text-muted">
-          Plataforma de emergencia colectiva no gubernamental. Carga optimizada para móviles. © {{ new Date().getFullYear() }}
+    <footer class="border-t border-neutral-100 bg-white py-8 px-4 mt-8">
+      <div class="max-w-7xl mx-auto space-y-4">
+        <!-- Declaración de la iniciativa -->
+        <p class="text-xs text-neutral-500 leading-relaxed max-w-4xl text-center mx-auto">
+          Esta es una iniciativa ciudadana independiente de código abierto para facilitar la localización de personas y
+          coordinar apoyo. Los datos recopilados se pondrán a disposición de los cuerpos de rescate oficiales
+          (Protección Civil, Bomberos) para agilizar las labores de búsqueda y rescate.
         </p>
-      </template>
 
-      <template #right>
-        <div class="flex items-center gap-2">
-          <UButton
-            to="https://github.com/jochdev/venezuela-emergencia"
-            target="_blank"
-            icon="i-simple-icons-github"
-            aria-label="GitHub"
-            color="neutral"
-            variant="ghost"
-            size="sm"
-          />
+        <div
+          class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-xs text-neutral-500 pt-4 border-t border-neutral-100">
+          <!-- Enlaces de políticas y código -->
+          <div class="flex flex-wrap gap-2 items-center">
+            <UButton label="Política de Privacidad y Manejo de Datos" to="/privacidad" variant="link" color="neutral"
+              size="xs" class="p-0 text-neutral-500 hover:text-neutral-900 cursor-pointer" />
+            <span>|</span>
+            <UButton label="Ver Código Fuente en GitHub" to="https://github.com/jochdev/venezuela-emergencia"
+              target="_blank" variant="link" color="neutral" size="xs"
+              class="p-0 text-neutral-500 hover:text-neutral-900 cursor-pointer" />
+          </div>
+
+          <!-- Créditos -->
+          <div class="md:text-right">
+            <p>
+              Desarrollado de forma abierta y solidaria por <a href="https://joch.dev" target="_blank"
+                class="hover:underline text-neutral-700">joch.dev</a>.
+            </p>
+            <p class="text-[10px] text-neutral-400 mt-1">
+              La base de datos se destruirá una vez superada la emergencia.
+            </p>
+          </div>
         </div>
-      </template>
-    </UFooter>
+      </div>
+    </footer>
   </UApp>
 </template>
