@@ -57,7 +57,7 @@ const cargarCentros = async () => {
   loading.value = true
   try {
     const supabase = useSupabase()
-    let query = supabase.from('centros_acopio').select('*')
+    let query = supabase.from('centros_acopio').select('*').eq('activo', true)
 
     if (filtroEstado.value) {
       query = query.eq('estado_id', filtroEstado.value)
