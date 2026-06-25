@@ -58,11 +58,24 @@ const resultados = ref<any[]>([])
 
 const obtenerUbicacionTexto = (estadoId: number, municipioId: number) => {
   const estado = (VENEZUELA_UBICACIONES?.value || []).find((e: any) => e.id === estadoId)
+  if (!municipioId) {
+    return estado ? `Estado ${estado.nombre}` : 'Ubicación no especificada'
+  }
   const municipio = estado?.municipios.find((m: any) => m.id === municipioId)
   if (estado && municipio) {
     return `Estado ${estado.nombre}, Municipio ${municipio.nombre}`
   }
   return 'Ubicación no especificada'
+}
+
+const formatDate = (dateStr: string) => {
+  return new Date(dateStr).toLocaleString('es-VE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
 const consultarEstatus = async () => {
@@ -74,17 +87,55 @@ const consultarEstatus = async () => {
 
   try {
     const supabase = useSupabase()
+    const term = query.value.trim()
     
     // Buscar en reportes_emergencias
-    const { data, error } = await supabase
+    const { data: dataReportes, error: errorReportes } = await supabase
       .from('reportes_emergencias')
-      .select('*')
-      .or(`nombre_completo.ilike.%${query.value.trim()}%,detalles_emergencia.ilike.%${query.value.trim()}%`)
+      .select('*, bitacora_incidentes(*, refugios(nombre_refugio, latitud, longitud), centros_medicos(nombre, latitud, longitud))')
+      .or(`nombre_completo.ilike.%${term}%,detalles_emergencia.ilike.%${term}%`)
       .limit(5)
 
-    if (error) throw error
+    // Buscar en busqueda_familiares
+    const { data: dataBusqueda, error: errorBusqueda } = await supabase
+      .from('busqueda_familiares')
+      .select('*, bitacora_casos(*)')
+      .or(`nombre_buscado.ilike.%${term}%,cedula_buscado.ilike.%${term}%`)
+      .limit(5)
 
-    resultados.value = data || []
+    const combined = []
+
+    if (dataReportes && dataReportes.length > 0) {
+      dataReportes.forEach((r: any) => {
+        combined.push({
+          tipo: 'reporte',
+          id: r.id,
+          nombre: r.nombre_completo,
+          estatus: r.estado_persona,
+          estado_id: r.estado_id,
+          municipio_id: r.municipio_id,
+          direccion: r.direccion_exacta,
+          bitacora: r.bitacora_incidentes ? r.bitacora_incidentes.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) : []
+        })
+      })
+    }
+
+    if (dataBusqueda && dataBusqueda.length > 0) {
+      dataBusqueda.forEach((b: any) => {
+        combined.push({
+          tipo: 'busqueda',
+          id: b.id,
+          nombre: b.nombre_buscado,
+          estatus: b.estatus,
+          estado_id: b.estado_ultimo_visto,
+          municipio_id: null,
+          direccion: b.ubicacion_actual || b.detalles_adicionales,
+          bitacora: b.bitacora_casos ? b.bitacora_casos.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) : []
+        })
+      })
+    }
+
+    resultados.value = combined
     consultado.value = true
   } catch (err) {
     console.error('Error al buscar familiar:', err)
@@ -130,8 +181,8 @@ const consultarEstatus = async () => {
     <div v-if="consultado" class="space-y-4 pt-2">
       <div v-if="resultados.length > 0" class="space-y-3">
         <div
-          v-for="registro in resultados"
-          :key="registro.id"
+          v-for="(registro, idx) in resultados"
+          :key="idx"
           class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-2 text-xs md:text-sm text-neutral-800"
         >
           <div class="flex items-start justify-between gap-2">
@@ -139,16 +190,63 @@ const consultarEstatus = async () => {
               <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
               ✓ Registro Encontrado
             </span>
-            <span class="px-2 py-0.5 rounded bg-neutral-200 text-[10px] text-neutral-700 font-mono">
-              {{ registro.estado_persona }}
+            <span class="px-2 py-0.5 rounded bg-neutral-200 text-[10px] text-neutral-700 font-mono font-bold uppercase">
+              {{ registro.estatus }}
             </span>
           </div>
           <p class="text-neutral-800 leading-relaxed">
-            <strong>{{ registro.nombre_completo || 'Persona sin identificar' }}</strong> se encuentra registrado con estatus <strong class="text-emerald-700">"{{ registro.estado_persona }}"</strong> en el {{ obtenerUbicacionTexto(registro.estado_id, registro.municipio_id) }}.
+            <strong>{{ registro.nombre || 'Persona sin identificar' }}</strong> se encuentra en estatus <strong class="text-emerald-700">"{{ registro.estatus }}"</strong> en {{ obtenerUbicacionTexto(registro.estado_id, registro.municipio_id) }}.
           </p>
-          <p v-if="registro.direccion_exacta" class="text-neutral-600 text-xs">
-            Ubicación de referencia: {{ registro.direccion_exacta }}
+          <p v-if="registro.direccion" class="text-neutral-600 text-xs">
+            Ubicación de referencia: {{ registro.direccion }}
           </p>
+
+          <!-- Timeline -->
+          <div v-if="registro.bitacora && registro.bitacora.length > 0" class="mt-4 pt-3 border-t border-emerald-200/60">
+            <h4 class="text-[11px] uppercase font-bold text-emerald-800 mb-3 tracking-wider">Línea de Tiempo</h4>
+            <div class="relative pl-3 border-l border-emerald-300 space-y-3">
+              <div v-for="log in registro.bitacora" :key="log.id" class="relative">
+                <span class="absolute -left-[17px] top-1.5 size-2 rounded-full bg-emerald-500 ring-4 ring-emerald-50" />
+                <div class="text-xs">
+                  <div class="flex justify-between items-center text-neutral-500 mb-0.5">
+                    <span class="font-mono text-[10px]">{{ formatDate(log.created_at) }}</span>
+                  </div>
+                  <div class="p-2 rounded bg-white border border-emerald-100 shadow-sm space-y-1">
+                    <span class="font-bold text-neutral-700 block mb-0.5">Estatus: {{ log.estatus || log.estado_persona }}</span>
+                    <p class="text-neutral-600 leading-relaxed">{{ log.detalles }}</p>
+
+                    <!-- Detalles de Ubicación Adicionales -->
+                    <div v-if="log.ubicacion_actual" class="flex items-start gap-1.5 mt-1 pt-1 border-t border-neutral-100">
+                      <UIcon name="i-lucide-map-pin" class="text-primary size-3.5 mt-0.5" />
+                      <span class="text-neutral-600 font-mono text-[10px]">Ubicación: <strong>{{ log.ubicacion_actual }}</strong></span>
+                    </div>
+
+                    <div v-if="log.refugios?.nombre_refugio || log.centros_medicos?.nombre" class="flex items-start gap-1.5 mt-1 pt-1 border-t border-neutral-100">
+                      <UIcon name="i-lucide-building" class="text-primary size-3.5 mt-0.5" />
+                      <div class="flex-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <span class="text-neutral-600 font-mono text-[10px]">
+                          Lugar: <strong>{{ log.refugios?.nombre_refugio || log.centros_medicos?.nombre }}</strong>
+                        </span>
+                        
+                        <UButton
+                          v-if="(log.refugios?.latitud && log.refugios?.longitud) || (log.centros_medicos?.latitud && log.centros_medicos?.longitud)"
+                          size="2xs"
+                          color="primary"
+                          variant="soft"
+                          icon="i-lucide-map"
+                          :to="`https://www.google.com/maps/search/?api=1&query=${log.refugios?.latitud || log.centros_medicos?.latitud},${log.refugios?.longitud || log.centros_medicos?.longitud}`"
+                          target="_blank"
+                        >
+                          Ir al sitio
+                        </UButton>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -160,7 +258,7 @@ const consultarEstatus = async () => {
         <div>
           <span class="font-bold text-neutral-900 block">⚠️ No se encontraron reportes con estos datos aún.</span>
           <span class="text-neutral-600 block mt-1">
-            Las autoridades y voluntarios siguen actualizando las listas. Intenta buscando con variaciones del nombre o apellido.
+            Las autoridades y voluntarios siguen actualizando las listas. Intenta buscando con variaciones del nombre o el número de cédula.
           </span>
         </div>
       </div>
